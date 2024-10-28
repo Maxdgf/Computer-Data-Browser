@@ -960,6 +960,7 @@ ________________________________________________________________________________
             self.fileName = f"HalfTextComputerDataReport{self.currentDate}.txt"
             self.filePath = filedialog.askdirectory()
             if os.path.exists(self.filePath):
+                loadingScreen()
                 with open(os.path.join(self.filePath, self.fileName), "w", encoding="UTF-8") as file:
                     file.write(self.dataTXTToSave)
                 time.sleep(1)
@@ -1131,6 +1132,43 @@ ________________________________________________________________________________
         except:
             self.videoCardsInfo = f"Graphics processors and cards:\n\n none"
 
+    def fetch_installed_apps_data(self):
+        self.osVersion = platform.system()
+        time.sleep(1)
+        try:
+            if self.osVersion == "Windows":
+                self.getApps = subprocess.check_output(['wmic', 'product', 'get', 'name'])
+                self.installedApps = str(self.getApps)
+
+                try:
+                    for i in range(len(self.installedApps)):
+                        self.listOfApps = self.installedApps.split("\\r\\r\\n")[6:][i]
+                except IndexError as e:
+                    self.listOfApps += ""
+
+            elif self.osVersion == "Darwin":
+                self.getApps = subprocess.check_output(['ls', '/Applications'])
+                self.installedApps = str(self.getApps)
+                
+                try:
+                    for i in range(len(self.installedApps)):
+                        self.listOfApps = self.installedApps.split("\\r\\r\\n")[6:][i]
+                except IndexError as e:
+                    self.listOfApps += "Done."
+                    
+            else:
+                self.getApps = subprocess.check_output(['ls', '/usr/share/applications'])
+                self.installedApps = str(self.getApps)
+
+                try:
+                    for i in range(len(self.installedApps)):
+                        self.listOfApps = self.installedApps.split("\\r\\r\\n")[6:][i]
+                except IndexError as e:
+                    self.listOfApps += "Done."
+
+        except:
+            self.listOfApps = "none"
+
     def configure_html_report(self):
         time.sleep(1)
 
@@ -1138,11 +1176,13 @@ ________________________________________________________________________________
         self.threadDV = threading.Thread(target=self.fetch_drivers_data, daemon=True)
         self.threadHD = threading.Thread(target=self.fetch_hard_drives_data, daemon=True)
         self.threadVD = threading.Thread(target=self.fetch_video_cards_data, daemon=True)
+        self.threadIA = threading.Thread(target=self.fetch_installed_apps_data, daemon=True)
 
         self.threadNF.start()
         self.threadDV.start()
         self.threadHD.start()
         self.threadVD.start()
+        self.threadIA.start()
 
         try:
             self.dataHTMLToSave = (f"""<center><h1>Full Computer Data Report</h1></center>
@@ -1157,15 +1197,21 @@ ________________________________________________________________________________
 <center><p>processor core count: {self.coreCount}</p></center>
 <center><p>processor clock speed: {self.clockSpeed} (min - {self.clockSpeedMin} | max - {self.clockSpeedMax})</p></center>
 <center><p>RAM memory: (total - {self.ramData1:.2f} mb | used - {self.ramData2:.2f} mb | free - {self.freeRamData} mb</p></cemter>
+<center><p>Hard drives:</p></center>
 <center><textarea>{self.hardDrives}</textarea></center>
+<center><p>Video cards:</p></center>
 <center><textarea>{self.videoCardsInfo}</textarea></center>
 <br>
 <br>
 <center><p>OS: {self.osNameData}</p></center>
 <center><p>Additional OS data: {self.finalOsData}</p></center>
+<center><p>Driver versions:</p></center>
 <center><textarea>{self.textDrivers}</textarea></center>
+<center><p>Installed apps:</p></center>
+<center><textarea>{self.listOfApps}</textarea></center>
 <br>
 <br>
+<center><p>Network interfaces:</p></center>
 <center><textarea>{self.keYS}</textarea></center>
 <center><p>Ip adresses: (local - {self.localIp} | external - {self.externalIp})</p></center>
 <center><p>Internet connection: {self.txtAnswer}</p></center>
@@ -1191,6 +1237,7 @@ ________________________________________________________________________________
             self.fileName = f"FullHtmlComputerDataReport{self.currentDate}.html"
             self.filePath = filedialog.askdirectory()
             self.openPath = self.filePath + self.fileName
+            loadingScreen()
             if os.path.exists(self.filePath):
                 with open(os.path.join(self.filePath, self.fileName), "w", encoding="UTF-8") as file:
                     file.write(self.dataHTMLToSave)
